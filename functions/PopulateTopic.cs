@@ -21,24 +21,17 @@ namespace BladeRunner.PopulateTopic
             ILogger log,
             [ServiceBus("brevents", Connection = "ServiceBusConnection")]IAsyncCollector<Message> collector)
         {
-
+            
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            // Create Message
             var scheduledDevice = JsonConvert.DeserializeObject<Device>(requestBody);
+            // Convert DateTime to Something Service Bus Can Use
+            DateTime surfaceTime = DateTime.Parse(scheduledDevice.Time + " " + scheduledDevice.Date);
+            // Create Message
             var message = new Message(Encoding.UTF8.GetBytes(requestBody))
             {
                 MessageId = Guid.NewGuid().ToString("N"),
-                ScheduledEnqueueTimeUtc = DateTime.UtcNow + TimeSpan.FromMinutes(1)
+                ScheduledEnqueueTimeUtc = surfaceTime
             };
-
-
-            // var responseMessage = new Device()
-            // {
-            //     Time = Time,
-            //     Date = Date,
-            //     DeviceId = DeviceId,
-            //     Telemetry = Telemetry,
-            // };
 
             await collector.AddAsync(message);
             
